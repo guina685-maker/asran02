@@ -572,17 +572,61 @@ function renderAll() {
   });
 
   // Галерея
+  /* ============ ГАЛЕРЕЯ (АВТОЗАГРУЗКА ИЗ ПАПКИ) ============ */
+async function renderGallery() {
   const gal = CONTENT.галерея || {};
   document.getElementById('gallery-title').textContent = gal.заголовок || 'АРТЫ';
   document.getElementById('gallery-sub').textContent = gal.подзаголовок || '';
+
   const galGrid = document.getElementById('gallery-grid');
-  galGrid.innerHTML = '';
-  (gal.арты || []).forEach(art => {
-    const item = document.createElement('div');
-    item.className = 'gallery-item';
-    item.innerHTML = `
-      <img src="${escapeHtml(art.файл)}" alt="${escapeHtml(art.подпись)}" onerror="this.style.display='none'; this.parentNode.insertAdjacentHTML('afterbegin', '<div class=&quot;empty&quot;>НЕТ ФАЙЛА<br>${escapeHtml(art.файл)}</div>')">
-      <div class="caption">${escapeHtml(art.подпись)}</div>
+  galGrid.innerHTML = '<div class="empty" style="grid-column: 1/-1; padding: 40px; text-align: center; color: #a064ff; letter-spacing: 2px;">ЗАГРУЖАЮ АРТЫ...</div>';
+
+  const folder = gal.папка || 'arts';
+  const owner = (gal.репо && gal.репо.владелец) || 'guina685-maker';
+  const repo = (gal.репо && gal.репо.имя) || 'asran02';
+  const customCaptions = gal.подписи || {};
+
+  try {
+    const url = 'https://api.github.com/repos/' + owner + '/' + repo + '/contents/' + folder;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Не могу прочитать папку');
+
+    const items = await res.json();
+    if (!Array.isArray(items)) throw new Error('Неверный ответ API');
+
+    const allArts = items
+      .filter(item => item.type === 'file' && /\.(jpg|jpeg|png|webp|gif)$/i.test(item.name))
+      .map(item => {
+        const baseName = item.name.replace(/\.[^.]+$/, '');
+        return {
+          путь: item.path,
+          подпись: customCaptions[baseName] || baseName.replace(/[-_]/g, ' ')
+        };
+      });
+
+    if (allArts.length === 0) {
+      galGrid.innerHTML = '<div class="empty" style="grid-column: 1/-1; padding: 40px; text-align: center; color: #6a5a80;">Артов не найдено в папке ' + folder + '</div>';
+      return;
+    }
+
+    document.getElementById('gallery-sub').textContent = allArts.length + ' артов';
+
+    galGrid.innerHTML = '';
+    for (const art of allArts) {
+      const item = document.createElement('div');
+      item.className = 'gallery-item';
+      const src = 'https://raw.githubusercontent.com/' + owner + '/' + repo + '/main/' + art.путь;
+      item.innerHTML = `
+        <img src="${src}" alt="${escapeHtml(art.подпись)}" loading="lazy" onerror="this.parentNode.style.display='none'">
+        <div class="caption">${escapeHtml(art.подпись)}</div>
+      `;
+      galGrid.appendChild(item);
+    }
+  } catch (err) {
+    console.error(err);
+    galGrid.innerHTML = '<div class="empty" style="grid-column: 1/-1; padding: 40px; text-align: center; color: #ff6a6a;">ОШИБКА ЗАГРУЗКИ АРТОВ<br><span style="font-size: 11px; color: #6a5a80;">Проверь папку ' + folder + '</span></div>';
+  }
+       }
     `;
     galGrid.appendChild(item);
   });
