@@ -376,6 +376,8 @@
     color: #6a5a80;
     font-size: 11px;
     letter-spacing: 2px;
+    text-align: center;
+    padding: 20px;
   }
 
   footer {
@@ -571,8 +573,17 @@ function renderAll() {
     settList.appendChild(row);
   });
 
-  // Галерея
-  /* ============ ГАЛЕРЕЯ (АВТОЗАГРУЗКА ИЗ ПАПКИ) ============ */
+  // Галерея — асинхронная загрузка
+  renderGallery();
+
+  // Футер
+  const f = CONTENT.футер || {};
+  document.getElementById('footer-formula').textContent = f.формула || '';
+  document.getElementById('footer-motto').textContent = '"' + (f.девиз || '') + '"';
+  document.getElementById('footer-copy').textContent = f.подпись || '';
+}
+
+/* ============ ГАЛЕРЕЯ (АВТОЗАГРУЗКА ИЗ ПАПКИ) ============ */
 async function renderGallery() {
   const gal = CONTENT.галерея || {};
   document.getElementById('gallery-title').textContent = gal.заголовок || 'АРТЫ';
@@ -626,18 +637,9 @@ async function renderGallery() {
     console.error(err);
     galGrid.innerHTML = '<div class="empty" style="grid-column: 1/-1; padding: 40px; text-align: center; color: #ff6a6a;">ОШИБКА ЗАГРУЗКИ АРТОВ<br><span style="font-size: 11px; color: #6a5a80;">Проверь папку ' + folder + '</span></div>';
   }
-       }
-    `;
-    galGrid.appendChild(item);
-  });
-
-  // Футер
-  const f = CONTENT.футер || {};
-  document.getElementById('footer-formula').textContent = f.формула || '';
-  document.getElementById('footer-motto').textContent = '"' + (f.девиз || '') + '"';
-  document.getElementById('footer-copy').textContent = f.подпись || '';
 }
 
+/* ============ ЭКРАНИРОВАНИЕ ============ */
 function escapeHtml(s) {
   return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
